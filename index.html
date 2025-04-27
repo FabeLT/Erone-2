@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calcolatore Area Triangoli</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .input-section {
+            flex: 1;
+            min-width: 300px;
+        }
+        .results-section {
+            flex: 1;
+            min-width: 300px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 150px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        .sum-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .sum-table th, .sum-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: right;
+        }
+        .sum-table th {
+            background-color: #f2f2f2;
+        }
+        .sum-table .total {
+            font-weight: bold;
+        }
+        .sm-text {
+            font-size: smaller;
+        }
+        .toggle-info {
+            color: blue;
+            text-decoration: underline;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 20px;
+            display: inline-block;
+        }
+        .info-text {
+            display: none;
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin-top: 10px;
+            background-color: #f9f9f9;
+            font-size: 14px;
+        }
+        .print-button {
+            background-color: #2196F3;
+        }
+        .print-button:hover {
+            background-color: #0b7dda;
+        }
+        .reset-button {
+            background-color: #f44336;
+        }
+        .reset-button:hover {
+            background-color: #da190b;
+        }
+        .clear-button {
+            background-color: #ff9800;
+        }
+        .clear-button:hover {
+            background-color: #e68a00;
+        }
+        
+        @media print {
+            button {
+                display: none;
+            }
+            .toggle-info, .info-text {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Calcolatore Area Triangoli con Formula di Erone</h1>
+    
+    <div class="container">
+        <div class="input-section">
+            <button id="clearFields" class="clear-button">Pulisci misure dei Lati</button>
+            
+            <div class="form-group">
+                <label for="sideA">Lato a (m)</label>
+                <input type="number" id="sideA" step="0.00001" min="0">
+            </div>
+            
+            <div class="form-group">
+                <label for="sideB">Lato b (m)</label>
+                <input type="number" id="sideB" step="0.00001" min="0">
+            </div>
+            
+            <div class="form-group">
+                <label for="sideC">Lato c (m)</label>
+                <input type="number" id="sideC" step="0.00001" min="0">
+            </div>
+            
+            <div class="result" id="areaResult">AREA = 0.00 mq.</div>
+            <div class="error" id="errorMessage"></div>
+        </div>
+        
+        <div class="results-section">
+            <button id="addToSum">AGGIUNGI ALLA SOMMA</button>
+            
+            <h3>SOMMA SUPERFICI</h3>
+            <table class="sum-table">
+                <thead>
+                    <tr>
+                        <th>Descrizione</th>
+                        <th>Valore (mq)</th>
+                    </tr>
+                </thead>
+                <tbody id="sumTableBody">
+                </tbody>
+                <tfoot>
+                    <tr class="total">
+                        <td>Tot. mq.</td>
+                        <td id="totalSum">0.00</td>
+                    </tr>
+                </tfoot>
+            </table>
+            
+            <div style="margin-top: 20px">
+                <button id="resetAll" class="reset-button">Reset</button>
+                <button id="printPage" class="print-button">Stampa</button>
+            </div>
+        </div>
+    </div>
+    
+    <div style="margin-top: 40px; font-size: 12px;">
+        <p>Calcolo eseguito con precisione a 5 cifre decimali</p>
+        <p class="toggle-info" id="toggleInfo">Come funziona la formula di Erone?</p>
+        <div class="info-text" id="infoText">
+            La formula di Erone (o formula di Erone di Alessandria) permette di calcolare l'area di un triangolo conoscendo la lunghezza dei tre lati (a, b, c) :<br>
+            Area = sqrt (s · (s-a) · (s-b) · (s-c))<br>
+            dove s è il semiperimetro del triangolo: s = (a + b + c) / 2
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sideA = document.getElementById('sideA');
+            const sideB = document.getElementById('sideB');
+            const sideC = document.getElementById('sideC');
+            const areaResult = document.getElementById('areaResult');
+            const errorMessage = document.getElementById('errorMessage');
+            const addToSumBtn = document.getElementById('addToSum');
+            const clearFieldsBtn = document.getElementById('clearFields');
+            const resetAllBtn = document.getElementById('resetAll');
+            const printPageBtn = document.getElementById('printPage');
+            const sumTableBody = document.getElementById('sumTableBody');
+            const totalSumEl = document.getElementById('totalSum');
+            const toggleInfo = document.getElementById('toggleInfo');
+            const infoText = document.getElementById('infoText');
+            
+            let counter = 0;
+            let totalSum = 0;
+            let currentArea = 0;
+            
+            // Formato numero con separatore migliaia
+            function formatNumber(num) {
+                return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+            }
+            
+            // Calcola area triangolo
+            function calculateArea() {
+                const a = parseFloat(sideA.value);
+                const b = parseFloat(sideB.value);
+                const c = parseFloat(sideC.value);
+                
+                errorMessage.textContent = '';
+                
+                if (!a || !b || !c) {
+                    areaResult.textContent = 'AREA = 0.00 mq.';
+                    currentArea = 0;
+                    return;
+                }
+                
+                // Verifica se i lati possono formare un triangolo
+                if (a + b <= c || a + c <= b || b + c <= a) {
+                    errorMessage.textContent = 'I valori inseriti non possono formare un triangolo valido.';
+                    areaResult.textContent = 'AREA = 0.00 mq.';
+                    currentArea = 0;
+                    return;
+                }
+                
+                // Calcolo con la formula di Erone
+                const s = (a + b + c) / 2;
+                const area = Math.sqrt(s * (s - a) * (s - b) * (s - c));
+                
+                // Arrotondamento a 5 cifre decimali per il calcolo interno
+                const preciseArea = Math.round(area * 100000) / 100000;
+                // Arrotondamento a 2 cifre decimali per la visualizzazione
+                const displayArea = Math.round(preciseArea * 100) / 100;
+                
+                currentArea = displayArea;
+                areaResult.textContent = 'AREA = ' + formatNumber(displayArea.toFixed(2)) + ' mq.';
+            }
+            
+            // Aggiungi alla somma
+            function addToSum() {
+                if (currentArea <= 0) {
+                    errorMessage.textContent = 'Calcola prima un\'area valida.';
+                    return;
+                }
+                
+                counter++;
+                totalSum += currentArea;
+                
+                const row = document.createElement('tr');
+                
+                const a = parseFloat(sideA.value);
+                const b = parseFloat(sideB.value);
+                const c = parseFloat(sideC.value);
+                
+                // Colonna descrizione
+                const descCell = document.createElement('td');
+                descCell.innerHTML = `Area ${counter} <span class="sm-text">(${a} - ${b} - ${c})</span>`;
+                row.appendChild(descCell);
+                
+                // Colonna valore
+                const valueCell = document.createElement('td');
+                valueCell.textContent = formatNumber(currentArea.toFixed(2));
+                row.appendChild(valueCell);
+                
+                sumTableBody.appendChild(row);
+                totalSumEl.textContent = formatNumber(totalSum.toFixed(2));
+            }
+            
+            // Event listeners
+            sideA.addEventListener('input', calculateArea);
+            sideB.addEventListener('input', calculateArea);
+            sideC.addEventListener('input', calculateArea);
+            
+            addToSumBtn.addEventListener('click', addToSum);
+            
+            clearFieldsBtn.addEventListener('click', function() {
+                sideA.value = '';
+                sideB.value = '';
+                sideC.value = '';
+                areaResult.textContent = 'AREA = 0.00 mq.';
+                errorMessage.textContent = '';
+                currentArea = 0;
+            });
+            
+            resetAllBtn.addEventListener('click', function() {
+                sideA.value = '';
+                sideB.value = '';
+                sideC.value = '';
+                areaResult.textContent = 'AREA = 0.00 mq.';
+                errorMessage.textContent = '';
+                currentArea = 0;
+                counter = 0;
+                totalSum = 0;
+                sumTableBody.innerHTML = '';
+                totalSumEl.textContent = '0.00';
+            });
+            
+            printPageBtn.addEventListener('click', function() {
+                window.print();
+            });
+            
+            toggleInfo.addEventListener('click', function() {
+                if (infoText.style.display === 'block') {
+                    infoText.style.display = 'none';
+                } else {
+                    infoText.style.display = 'block';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
